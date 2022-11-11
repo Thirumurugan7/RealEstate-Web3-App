@@ -6,7 +6,7 @@ const tokens = (n) => {
 };
 
 describe("Escrow", () => {
-  let buyers, seller, inspector, lender;
+  let buyer, seller, inspector, lender;
   let realEstate, escrow;
   beforeEach(async () => {
     [buyer, seller, inspector, lender] = await ethers.getSigners();
@@ -39,7 +39,9 @@ describe("Escrow", () => {
 
     // List properties
 
-    transaction = await escrow.connect(seller).list(1);
+    transaction = await escrow
+      .connect(seller)
+      .list(1, tokens(10), tokens(5), buyer.address);
     await transaction.wait();
   });
   describe("Deployment", () => {
@@ -77,6 +79,28 @@ describe("Escrow", () => {
     it("Returns escrow amount", async () => {
       const result = await escrow.escrowAmount(1);
       expect(result).to.be.equal(tokens(5));
+    });
+  });
+
+  describe("Deposits", () => {
+    it("Updates contract balance", async () => {
+      const transaction = await escrow
+        .connect(buyer)
+        .depositEarnest(1, { value: tokens(5) });
+      await transaction.wait();
+      const result = await escrow.getBalance();
+      expect(result).to.equal(tokens(5));
+    });
+  });
+
+  describe("Inspector", () => {
+    it("Updates contract balance", async () => {
+      const transaction = await escrow
+        .connect(inspector)
+        .updateInspectionStatus(1, true);
+      await transaction.wait();
+      const result = await escrow.insectionPassed(1);
+      expect(result).to.be.equal(true);
     });
   });
 });
