@@ -33,7 +33,8 @@ contract Escrow {
     mapping(uint256 => uint256) public purchasePrice; // seconf uint256 is the price
     mapping(uint256 => uint256) public escrowAmount; // seconf uint256 is the amount
     mapping(uint256 => address) public buyer; // address is the address of the buyer
-    mapping(uint256 => bool) public insectionPassed; //bool is either true or false for inspection of each nft
+    mapping(uint256 => bool) public inspectionPassed; //bool is either true or false for inspection of each nft
+    mapping(uint256 => mapping(address => bool)) public approval; // a uint mapped to a mapping of address mapped to bool --- in real time nft mapped to address is true or false)
 
     //constructr function
     constructor(
@@ -53,7 +54,7 @@ contract Escrow {
         uint256 _purchasePrice,
         uint256 _escrowAmount,
         address _buyer
-    ) public onlySeller {
+    ) public payable onlySeller {
         //onlyseller is a modifer declared above to modify who can access the particular function
 
         // transfer functions takes three arguments (from,to,nftID)
@@ -77,10 +78,39 @@ contract Escrow {
         return address(this).balance; //address(this) is the address of current contract
     }
 
+    function approveSale(uint256 _nftID) public {
+        approval[_nftID][msg.sender] = true; //we pass nftid alone then msg.sender is taken automatically from metamask wallet in real project but we send the address while testing
+    }
+
     function updateInspectionStatus(uint256 _nftID, bool _passed)
         public
         onlyInspector
     {
-        insectionPassed[_nftID] = _passed;
+        inspectionPassed[_nftID] = _passed;
     }
+
+    function finalizeSale(uint256 _nftID) public {
+        require(inspectionPassed[_nftID]);
+        require(approval[_nftID][buyer[_nftID]]);
+        require(approval[_nftID][seller]);
+        require(approval[_nftID][lender]);
+        require(address(this).balance >= purchasePrice[_nftID]);
+
+        isListed[_nftID] = false;
+
+        (bool success, ) = payable(seller).call{value: address(this).balance}(
+            ""
+        );
+        require(success);
+
+        IERC721(nftAddress).transferFrom(address(this), buyer[_nftID], _nftID);
+    }
+
+    receive() external payable {} //itha podalana cannot compute gas error will occur
 }
+
+// #I had the same issue but solved it myself
+
+// ##I forgot to  add the following line of code  in my contract
+
+// receive() external payable {}
