@@ -97,16 +97,27 @@ contract Escrow {
         require(address(this).balance >= purchasePrice[_nftID]);
 
         isListed[_nftID] = false;
-
+        //one way to sending ether from smart contract to seller
         (bool success, ) = payable(seller).call{value: address(this).balance}(
             ""
         );
         require(success);
-
+        //changing the nft ownership seller to the contract
         IERC721(nftAddress).transferFrom(address(this), buyer[_nftID], _nftID);
     }
 
     receive() external payable {} //itha podalana cannot compute gas error will occur
+
+    // calcel sale -> handle earnest deposit
+    // if inspection status is not approved, then refund, otherwise send  to seller
+
+    function cancelSale(uint256 _nftID) public {
+        if (inspectionPassed[_nftID] == false) {
+            payable(buyer[_nftID]).transfer(address(this).balance);
+        } else {
+            payable(seller).transfer(address(this).balance);
+        }
+    }
 }
 
 // #I had the same issue but solved it myself
