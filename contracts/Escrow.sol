@@ -10,17 +10,17 @@ interface IERC721 {
 }
 
 contract Escrow {
-    address public lender;
-    address public inspector;
-    address payable public seller;
     address public nftAddress;
+    address payable public seller;
+    address public inspector;
+    address public lender;
 
     modifier onlySeller() {
         require(msg.sender == seller, "Only sender can call this functions");
         _;
     }
     modifier onlyBuyer(uint256 _nftID) {
-        require(msg.sender == buyer[_nftID], "Only sender can call this");
+        require(msg.sender == buyer[_nftID], "Only buyer can call this");
         _;
     }
     modifier onlyInspector() {
@@ -39,8 +39,8 @@ contract Escrow {
     //constructr function
     constructor(
         address _nftAddress,
-        address _inspector,
         address payable _seller,
+        address _inspector,
         address _lender
     ) {
         lender = _lender;
@@ -51,9 +51,9 @@ contract Escrow {
 
     function list(
         uint256 _nftID,
+        address _buyer,
         uint256 _purchasePrice,
-        uint256 _escrowAmount,
-        address _buyer
+        uint256 _escrowAmount
     ) public payable onlySeller {
         //onlyseller is a modifer declared above to modify who can access the particular function
 
@@ -72,10 +72,6 @@ contract Escrow {
     // Put Under Contract accessed by only buyer and it is payable function
     function depositEarnest(uint256 _nftID) public payable onlyBuyer(_nftID) {
         require(msg.value >= escrowAmount[_nftID]);
-    }
-
-    function getBalance() public view returns (uint256) {
-        return address(this).balance; //address(this) is the address of current contract
     }
 
     function approveSale(uint256 _nftID) public {
@@ -106,8 +102,6 @@ contract Escrow {
         IERC721(nftAddress).transferFrom(address(this), buyer[_nftID], _nftID);
     }
 
-    receive() external payable {} //itha podalana cannot compute gas error will occur
-
     // calcel sale -> handle earnest deposit
     // if inspection status is not approved, then refund, otherwise send  to seller
 
@@ -117,6 +111,12 @@ contract Escrow {
         } else {
             payable(seller).transfer(address(this).balance);
         }
+    }
+
+    receive() external payable {} //itha podalana cannot compute gas error will occur
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance; //address(this) is the address of current contract
     }
 }
 
