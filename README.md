@@ -29,3 +29,6 @@ In a separate terminal execute:
 
 ### 7. Start frontend
 `$ npm run start`
+
+
+![image](https://user-images.githubusercontent.com/67679146/201953928-223b1f1b-ceb3-43bb-a6da-1c2525043ae8.png)
